@@ -3,6 +3,10 @@ package tw.brad.apps.brad27;
 //資料庫放在內存空間
 //https://en.softonic.com/download/sqlitemanager/windows/post-download?ex=BB-1006.3瀏覽器外掛,下載
 //select,where,group by,having ,order by .limit
+//android content provider:
+//*你可以提供讓使用者存取得動作
+//*provider :https://developer.android.com/guide/topics/providers/content-provider-basics.html?hl=zh-tw
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.ContentValues;
@@ -29,8 +33,8 @@ public class MainActivity extends AppCompatActivity {
         //增
     public void insert(View view) {
         //舊的新增方式容易被名馬攻擊
-        String sql = "INSERT INTO cust (cname,birthday) VALUES ('Brad', '1999-01-02')";
-        database.execSQL(sql);
+//        String sql = "INSERT INTO cust (cname,birthday) VALUES ('Brad', '1999-01-02')";
+//        database.execSQL(sql);
 
 
         ContentValues values = new ContentValues();
@@ -40,19 +44,30 @@ public class MainActivity extends AppCompatActivity {
 
         query(null);
     }
-        //刪
-    public void delete(View view) {
-
-    }
-        //修
+        //刪除了第三筆資料
+        public void delete(View view) {
+            // delete from cust where id = 3 and cname = 'Eric'
+            database.delete("cust", "id = ? and cname = ?",
+                    new String[]{"3","Brad"});
+            query(null);
+        }
+        //修改了第四筆資料
     public void update(View view) {
-
+        //update cust set cname ='Brad', birthday='1999-02-03' where id=4;
+        ContentValues values = new ContentValues();
+        values.put("cname","Hank");
+        values.put("birthday","1992-04-05");
+        database.update("cust",values,"id=?",new String[]{"4"});
+        //(1.表明,2.values掛上去3.隔式id?4.物件陣列第幾筆)
     }
         //查
     public void query(View view) {
         //String sql = "SELECT * FROM cust"; 原始寫法
+//        Cursor cursor = database.query("cust", null, null,null,
+//                null,null,null); //(庫表,select,where,group by,having ,order by .limit,)取得查詢游標
+
         Cursor cursor = database.query("cust", null, null,null,
-                null,null,null); //(庫表,select,where,group by,having ,order by .limit,)取得查詢游標
+                null,null,null);
         if (cursor != null){ //如果資料庫沒空
             while (cursor.moveToNext()){//下一筆游標資料
                 String id = cursor.getString(cursor.getColumnIndex("id")); //取得id列的資料庫欄位存到id
@@ -61,7 +76,19 @@ public class MainActivity extends AppCompatActivity {
                 Log.v("brad", id + ":" + cname + ":" + birthday);
             }
         }
-
-
+    //======================================================
+        //條件查詢址查詢有Eric的
+        //查詢的另外一種方式,這種方式可以搭配join的句法,因為怕名馬攻擊所以問號變數放在String[]{這裡面}
+       cursor =database.rawQuery(
+                "select * from cust where id in (select id from cust where cname =?)",
+                new String[]{"Eric"}); //(1.sql// 語法 2.字串[]{})
+        if (cursor != null){ //如果資料庫沒空
+            while (cursor.moveToNext()){//下一筆游標資料
+                String id = cursor.getString(cursor.getColumnIndex("id")); //取得id列的資料庫欄位存到id
+                String cname = cursor.getString(cursor.getColumnIndex("cname"));
+                String birthday = cursor.getString(cursor.getColumnIndex("birthday"));
+                Log.v("brad", id + ":" + cname + ":" + birthday);
+            }
+        }
     }
 }
